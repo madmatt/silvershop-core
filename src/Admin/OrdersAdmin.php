@@ -9,7 +9,6 @@ use SilverStripe\Admin\ModelAdmin;
 use SilverStripe\Forms\GridField\GridFieldAddNewButton;
 use SilverStripe\Forms\GridField\GridFieldDetailForm;
 use SilverStripe\Forms\GridField\GridFieldSortableHeader;
-use SilverStripe\ORM\DataObject;
 
 /**
  * Order administration interface, based on ModelAdmin
@@ -39,10 +38,12 @@ class OrdersAdmin extends ModelAdmin
     public function getList()
     {
         $list = parent::getList();
-
+        $params = $this->request->requestVar('q');
         if ($this->modelClass == Order::class) {
             // Exclude hidden statuses
-            $list = $list->exclude('Status', Order::config()->hidden_status); 
+            if(!isset($params['Status']) || !$params['Status']) {
+                $list = $list->exclude('Status', Order::config()->hidden_status);
+            }
             $this->extend('updateList', $list);
         }
 

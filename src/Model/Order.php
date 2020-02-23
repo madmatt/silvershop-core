@@ -34,7 +34,9 @@ use SilverStripe\ORM\HasManyList;
 use SilverStripe\ORM\Search\SearchContext;
 use SilverStripe\ORM\UnsavedRelationList;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
 use SilverStripe\Security\Security;
+use SilverStripe\Security\SecurityToken;
 
 /**
  * The order class is a databound object for handling Orders
@@ -314,6 +316,11 @@ class Order extends DataObject
             LiteralField::create('Customer', $fs . $this->renderWith('SilverShop\Admin\OrderAdmin_Customer') . $fe),
             LiteralField::create('Addresses', $fs . $this->renderWith('SilverShop\Admin\OrderAdmin_Addresses') . $fe),
             LiteralField::create('Content', $fs . $this->renderWith('SilverShop\Admin\OrderAdmin_Content') . $fe),
+            LiteralField::create('PrintLink', sprintf(
+                    "<a href='OrderAdminPrintController/printorder/%s?SecurityID=%s' target='_blank'>Print Receipt</a>",
+                    $this->ID,
+                    SecurityToken::inst()->getValue()
+            ))
         );
         if ($this->Notes) {
             $parts[] = LiteralField::create('Notes', $fs . $this->renderWith('SilverShop\Admin\OrderAdmin_Notes') . $fe);
@@ -356,8 +363,8 @@ class Order extends DataObject
     {
         $context = parent::getDefaultSearchContext();
         $fields = $context->getFields();
+        $validStates = array_merge(self::config()->placed_status, self::config()->hidden_status);
 
-        $validStates = self::config()->placed_status;
         $statusOptions = array_filter(self::get_order_status_options(), function ($k) use ($validStates) {
             return in_array($k, $validStates);
         }, ARRAY_FILTER_USE_KEY);
@@ -518,7 +525,7 @@ class Order extends DataObject
     public function Link()
     {
         $link = CheckoutPage::find_link(false, 'order', $this->ID);
-        
+
         if (Security::getCurrentUser()) {
             $link = Controller::join_links(AccountPage::find_link(), 'order', $this->ID);
         }
@@ -598,7 +605,17 @@ class Order extends DataObject
      */
     public function canView($member = null)
     {
+        if(!$member) $member = Security::getCurrentUser();
+
         $extended = $this->extendedCan(__FUNCTION__, $member);
+
+        if($this->MemberID) {
+            if(!$member || $this->MemberID !== $member->ID) {
+                if(!Permission::check('CMS_ACCESS_OrdersAdmin')) {
+                    return false;
+                }
+            }
+        }
         if ($extended !== null) {
             return $extended;
         }

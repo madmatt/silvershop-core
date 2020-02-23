@@ -4,6 +4,10 @@
 
 - Add new `VisibleToCustomer` flag to `OrderStatusLog`. Use it alongside the existing `SentToCustomer` flags to allow developers to store additional admin-only log messages attached to orders.
 - Add new `order_is_required` config flag to `OrderStatusLog`, set to true by default (for backwards-compatibility). Set it to `false` to allow `OrderStatusLog` objects to be created that are not linked to any particular `Order` object.
+- Add old `silvertripe-shop` features to SilverShop core:
+    - Add `Cart` checkbox on `OrdersAdmin` (/admin/orders) to filter out orders that are on the cart and left unprocessed
+    - Add `Print Receipt` link on `Order` which would allow admins to print details for a specific order on the CMS
+    - Add `canView` permission check on `Order` 
 
 ## 3.0.0
 
